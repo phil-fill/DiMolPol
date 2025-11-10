@@ -21,13 +21,13 @@ def train_epoch_matrix(model, dataloader, optimizer, device, writer=None, epoch=
         pred = model(data)  # (B,3,3)
         target = data.molecular_polarization_tensor.view(-1, 3, 3).to(device).float()
 
-        # Metriken (alle liefern Skalar)
+        # metrics
         m_tensor = tensor_mae(pred, target)
         m_trace  = trace_mae(pred, target)
         m_frob   = frobenius_mae(pred, target)
         m_aniso  = anisotropic_mae(pred, target)
 
-        # kombinierter Loss
+        # loss
         loss = m_tensor
 
         loss.backward()
@@ -35,7 +35,7 @@ def train_epoch_matrix(model, dataloader, optimizer, device, writer=None, epoch=
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clip_grad)
         optimizer.step()
 
-        # Gewichtet akkumulieren
+        # accumulated weights
         num_graphs = data.num_graphs if hasattr(data, "num_graphs") else pred.size(0)
         n_total += num_graphs
         totals["loss"]       += loss.item()    * num_graphs
@@ -44,7 +44,7 @@ def train_epoch_matrix(model, dataloader, optimizer, device, writer=None, epoch=
         totals["frob_mae"]   += m_frob.item()  * num_graphs
         totals["aniso_mae"]  += m_aniso.item() * num_graphs
 
-        # nur Anzeige in der Progressbar (kein Batch-Logging)
+
         pbar.set_postfix(
             loss=f"{loss.item():.4f}",
             tMAE=f"{m_tensor.item():.4f}",
@@ -53,11 +53,11 @@ def train_epoch_matrix(model, dataloader, optimizer, device, writer=None, epoch=
             aMAE=f"{m_aniso.item():.4f}",
         )
 
-    # Epoch-Mittelwerte
+    # means
     denom = max(n_total, 1)
     avg = {k: v / denom for k, v in totals.items()}
 
-    # TensorBoard: nur pro Epoche loggen
+    # log in tensorboard
     if writer is not None and epoch is not None:
         writer.add_scalar("Train/Loss",        avg["loss"],       epoch)
         writer.add_scalar("Train/TensorMAE",   avg["tensor_mae"], epoch)
@@ -82,16 +82,16 @@ def val_epoch_matrix(model, dataloader, device, writer=None, epoch=None) -> Tupl
         pred   = model(data)  # (B,3,3)
         target = data.molecular_polarization_tensor.view(-1, 3, 3).to(device).float()
 
-        # Metriken
+        # metrics
         m_tensor = tensor_mae(pred, target)
         m_trace  = trace_mae(pred, target)
         m_frob   = frobenius_mae(pred, target)
         m_aniso  = anisotropic_mae(pred, target)
 
-        # kombinierter Loss (Skalar)
+        # loss
         loss = m_aniso
 
-        # gewichtet akkumulieren
+        # accumulate weights
         num = data.num_graphs if hasattr(data, "num_graphs") else pred.size(0)
         n_total += num
         totals["loss"]       += loss.item()    * num
@@ -100,11 +100,11 @@ def val_epoch_matrix(model, dataloader, device, writer=None, epoch=None) -> Tupl
         totals["frob_mae"]   += m_frob.item()  * num
         totals["aniso_mae"]  += m_aniso.item() * num
 
-    # Epoch-Mittelwerte
+    # means
     denom = max(n_total, 1)
     avg = {k: v / denom for k, v in totals.items()}
 
-    # TensorBoard: nur pro Epoche
+    # tensorboard
     if writer is not None and epoch is not None:
         writer.add_scalar("Val/Loss", avg["loss"], epoch)
         writer.add_scalar("Val/TensorMAE", avg["tensor_mae"], epoch)
@@ -132,28 +132,27 @@ def test_epoch_matrix(model, dataloader, device, writer=None, epoch=None) -> Tup
         pred   = model(data)  # (B,3,3)
         target = data.molecular_polarization_tensor.view(-1, 3, 3).to(device).float()
 
-        # --- Metriken ---
+        # metrics
         m_tensor = tensor_mae(pred, target)
         m_trace  = trace_mae(pred, target)
         m_frob   = frobenius_mae(pred, target)
         m_aniso  = anisotropic_mae(pred, target)
         loss = (m_tensor + m_trace + m_frob + m_aniso) / 4.0
 
-        # --- Ground-Truth-Skalen (pro Batch) ---
-        # Frobenius-Norm von T
+
         gt_frob = torch.linalg.norm(target, ord='fro', dim=(-2, -1)).mean()
 
         # |Trace(T)|
         gt_trace_abs = target.diagonal(dim1=-2, dim2=-1).sum(-1).abs().mean()
 
-        # Deviatorische Frobenius-Norm: ||T - (tr/3) I||_F
+
         I = torch.eye(3, dtype=target.dtype, device=target.device)
         tr = target.diagonal(dim1=-2, dim2=-1).sum(-1) / 3.0
         dev_t = target - tr[:, None, None] * I
         gt_aniso_abs = dev_t.abs().mean(dim=(-2, -1)).mean()
 
 
-        # Mittlere |Komponente| über alle 9 Einträge
+        # means
         gt_comp_abs = target.abs().mean(dim=(-2, -1)).mean()
 
         # --- Akkumulieren (gewichtet) ---
@@ -171,7 +170,7 @@ def test_epoch_matrix(model, dataloader, device, writer=None, epoch=None) -> Tup
         totals["gt_aniso_mean"]  += gt_aniso_abs.item()  * num
         totals["gt_component_abs_mean"] += gt_comp_abs.item()  * num
 
-    # Epoch-Mittelwerte
+    # means
     denom = max(n_total, 1)
     avg = {k: v / denom for k, v in totals.items()}
 

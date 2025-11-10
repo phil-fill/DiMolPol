@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.loader import DataLoader
 from torch.utils.data import Subset
 
-# Deine Module
+
 from DiMolPol.architecture.tensor_model import TensorMessage_Tensors
 from DiMolPol.experiments.train_functions import *
 from utils.constants import Z2EMBED_QM7X
@@ -22,9 +22,7 @@ from utils.dataloader import MoleculeDataset, set_seeds
 from pathlib import Path
 print("CWD:", Path.cwd())
 
-# =========================
-# Hyperparameter / Pfade
-# =========================
+
 META_PATH = "data/meta.pickle"
 
 
@@ -43,9 +41,7 @@ SEED                 = 42
 
 
 
-# =========================
-# Main
-# =========================
+
 def run():
     set_seeds(SEED)
 
@@ -68,7 +64,7 @@ def run():
     train_idx, val_idx, test_idx = ds.load_splits_from_json(SPLIT_JSON)
     print(f"[SPLIT] Configs  -> Train {len(train_idx)}, Val {len(val_idx)}, Test {len(test_idx)}")
 
-    # --- Subsets & Loader
+    # load data
     train_set = Subset(ds, train_idx)
     val_set = Subset(ds, val_idx)
     test_set = Subset(ds, test_idx)
@@ -77,7 +73,6 @@ def run():
     val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
-    # --- Modell / Optimizer / Scheduler
     SCALAR_LAYERS = [NUM_FEATURES_SCALARS] * NUM_LAYERS
     VECTOR_LAYERS = [NUM_FEATURES_VECTORS] * NUM_LAYERS
     TENSOR_LAYERS = [NUM_FEATURES_TENSORS] * NUM_LAYERS
@@ -98,8 +93,6 @@ def run():
     best_val = float("inf")
     best_path = ckpt_dir / "best_model.pt"  # nur Gewichte
     best_full_path = ckpt_dir / "best_full.ckpt"  # optional: voller Checkpoint
-    # << NEU
-
 
     writer = SummaryWriter(log_dir=f"DiMolPol/experiments/logs/{config_name}")
 
@@ -110,7 +103,7 @@ def run():
     optimizer = optim.Adam(model.parameters(), lr=START_LR, weight_decay=1e-16)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
-    # --- Training
+    # train loop
     for epoch in range(EPOCHS):
         train_loss, train_metrics = train_epoch_matrix(model, train_loader, optimizer, DEVICE, writer=writer, epoch=epoch)
 
@@ -136,7 +129,6 @@ def run():
         if val_loss < best_val:
             best_val = float(val_loss)
             torch.save(model.state_dict(), best_path)
-            # Optional: auch Optimizer/Scheduler/Epoch mit abspeichern (für Resume)
             torch.save({
                 "epoch": epoch,
                 "model_state": model.state_dict(),

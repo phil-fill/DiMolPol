@@ -42,9 +42,7 @@ SEED                 = 42
 
 
 
-# =========================
-# Main
-# =========================
+
 def run():
     set_seeds(SEED)
 
@@ -91,7 +89,6 @@ def run():
     best_val = float("inf")
     best_path = ckpt_dir / "best_model.pt"  # nur Gewichte
     best_full_path = ckpt_dir / "best_full.ckpt"  # optional: voller Checkpoint
-    # << NEU
 
 
     writer = SummaryWriter(log_dir=f"DiMolPol/experiments/logs/{config_name}")
@@ -103,7 +100,7 @@ def run():
     optimizer = optim.Adam(model.parameters(), lr=START_LR, weight_decay=1e-16)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
-    # --- Training
+    # train loop
     for epoch in range(EPOCHS):
         train_loss, train_metrics = train_epoch_matrix(model, train_loader, optimizer, DEVICE, writer=writer, epoch=epoch)
 
@@ -129,7 +126,6 @@ def run():
         if val_loss < best_val:
             best_val = float(val_loss)
             torch.save(model.state_dict(), best_path)
-            # Optional: auch Optimizer/Scheduler/Epoch mit abspeichern (für Resume)
             torch.save({
                 "epoch": epoch,
                 "model_state": model.state_dict(),
