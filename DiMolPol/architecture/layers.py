@@ -177,7 +177,7 @@ class TensorChannel(nn.Module):
         h: torch.Tensor,
         edge_index: torch.Tensor,
         local_frames: torch.Tensor,
-        batch: torch.Tensor,                 # unused here but kept for API consistency
+        batch: torch.Tensor,
         t_prev: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         N = x.size(0)

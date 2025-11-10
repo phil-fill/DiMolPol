@@ -9,8 +9,7 @@ from torch_geometric.data import Data
 from torch_geometric.loader import DataLoader
 import tqdm
 
-from utils.pca_local_frames import compute_frames_torch
-from utils.utils import compute_cutoff_edges_torch, compute_knn_edges_torch
+from utils.utils import compute_cutoff_edges_torch, compute_knn_edges_torch, compute_frames_torch
 
 
 class MoleculeDataset(torch.utils.data.Dataset):

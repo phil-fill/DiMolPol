@@ -1,3 +1,8 @@
 data/raw_data
 data/meta.pickle
 .idea
+DiMolPol/architecture/__pycache__/
+DiMolPol/experiments/__pycache__/
+DiMolPol/experiments/checkpoints/
+DiMolPol/experiments/logs/
+utils/__pycache__/

@@ -14,10 +14,10 @@ from torch_geometric.loader import DataLoader
 from torch.utils.data import Subset
 
 # Deine Module
-from experiments.qm7X.models.tensor import TensorMessage_Tensors
-from experiments.qm7X.train.train_functions import *
+from DiMolPol.architecture.tensor_model import TensorMessage_Tensors
+from DiMolPol.experiments.train_functions import *
 from utils.constants import Z2EMBED_QM7X
-from data.qm7x.dataloader import MoleculeDataset, set_seeds
+from utils.dataloader import MoleculeDataset, set_seeds
 
 from pathlib import Path
 print("CWD:", Path.cwd())
@@ -25,12 +25,11 @@ print("CWD:", Path.cwd())
 # =========================
 # Hyperparameter / Pfade
 # =========================
-META_PATH = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/meta.pickle"
+META_PATH = "data/meta.pickle"
 
 
 # Splits:
-SPLIT_IDX_NPZ = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/splits_indices.npz"   # bevorzugt
-SPLIT_JSON    = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/splits_mol.json"      # Fallback (wird zu Indizes rekonstruiert)
+SPLIT_JSON    = "data/splits_mol.json"      # Fallback (wird zu Indizes rekonstruiert)
 
 EPOCHS               = 1000
 BATCH_SIZE           = 32
@@ -61,13 +60,13 @@ def run():
     else:
         print("❌ CUDA not available")
 
-    # --- Dataset laden
+    # load dataset
     ds = MoleculeDataset(META_PATH, cutoff=CUTOFF_RADIUS, batch_size=BATCH_SIZE)
-    print(f"[INFO] Geladene Datensätze: {len(ds)}")
+    print(f"[INFO] loaded data {len(ds)}")
 
-    # --- Splits aus JSON lesen und auf ds mappen -> Indizes zurückbekommen
+    # create dataset with splits
     train_idx, val_idx, test_idx = ds.load_splits_from_json(SPLIT_JSON)
-    print(f"[SPLIT] Konfigs  -> Train {len(train_idx)}, Val {len(val_idx)}, Test {len(test_idx)}")
+    print(f"[SPLIT] Configs  -> Train {len(train_idx)}, Val {len(val_idx)}, Test {len(test_idx)}")
 
     # --- Subsets & Loader
     train_set = Subset(ds, train_idx)
@@ -94,7 +93,7 @@ def run():
         f"_Vector{NUM_FEATURES_VECTORS}"
         f"_Tensor{NUM_FEATURES_TENSORS}"
     )
-    ckpt_dir = Path("./checkpoints") / config_name
+    ckpt_dir = Path("DiMolPol/experiments/checkpoints") / config_name
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     best_val = float("inf")
     best_path = ckpt_dir / "best_model.pt"  # nur Gewichte
@@ -102,7 +101,7 @@ def run():
     # << NEU
 
 
-    writer = SummaryWriter(log_dir=f"./logs/{config_name}")
+    writer = SummaryWriter(log_dir=f"DiMolPol/experiments/logs/{config_name}")
 
     model = TensorMessage_Tensors(
         SCALAR_LAYERS, VECTOR_LAYERS, TENSOR_LAYERS, Z2EMBED_QM7X

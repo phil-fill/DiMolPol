@@ -4,7 +4,7 @@ from torch_geometric.data import Data, Batch
 from torch_geometric.nn import global_add_pool
 from typing import List, Optional
 
-from DiMolPol.DiMolPol.architecture.layers import ScalarChannel
+from DiMolPol.architecture.layers import ScalarChannel
 
 
 def init_weights(m: nn.Module) -> None:

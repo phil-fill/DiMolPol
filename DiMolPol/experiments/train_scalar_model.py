@@ -13,11 +13,11 @@ from torch.utils.tensorboard import SummaryWriter
 from torch_geometric.loader import DataLoader
 from torch.utils.data import Subset
 
-# Deine Module
-from experiments.qm7X.models.scalar import ScalarModel
-from experiments.qm7X.train.train_functions import *
+
+from DiMolPol.architecture.scalar_model import ScalarModel
+from DiMolPol.experiments.train_functions import *
 from utils.constants import Z2EMBED_QM7X
-from data.qm7x.dataloader import MoleculeDataset, set_seeds
+from utils.dataloader import MoleculeDataset, set_seeds
 
 from pathlib import Path
 print("CWD:", Path.cwd())
@@ -25,12 +25,12 @@ print("CWD:", Path.cwd())
 # =========================
 # Hyperparameter / Pfade
 # =========================
-META_PATH = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/meta.pickle"
+META_PATH = "data/meta.pickle"
 
 
 # Splits:
-SPLIT_IDX_NPZ = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/splits_indices.npz"   # bevorzugt
-SPLIT_JSON    = "/home/phil-fill/PycharmProjects/TensorFrames2/data/qm7x/splits_mol.json"      # Fallback (wird zu Indizes rekonstruiert)
+
+SPLIT_JSON    = "data/splits_mol.json"
 
 EPOCHS               = 1000
 BATCH_SIZE           = 32
@@ -48,7 +48,7 @@ SEED                 = 42
 def run():
     set_seeds(SEED)
 
-    # --- CUDA-Info sicher ausgeben
+    # --- CUDA-Info
     if torch.cuda.is_available():
         print("✅ CUDA available!")
         try:
@@ -59,15 +59,13 @@ def run():
     else:
         print("❌ CUDA not available")
 
-    # --- Dataset laden
+    # load dataset
     ds = MoleculeDataset(META_PATH, cutoff=CUTOFF_RADIUS, batch_size=BATCH_SIZE)
-    print(f"[INFO] Geladene Datensätze: {len(ds)}")
+    print(f"[INFO] loaded data: {len(ds)}")
 
-    # --- Splits aus JSON lesen und auf ds mappen -> Indizes zurückbekommen
+    # create dataset with splits
     train_idx, val_idx, test_idx = ds.load_splits_from_json(SPLIT_JSON)
-    print(f"[SPLIT] Konfigs  -> Train {len(train_idx)}, Val {len(val_idx)}, Test {len(test_idx)}")
-
-    # --- Subsets & Loader
+    print(f"[SPLIT] configs  -> Train {len(train_idx)}, Val {len(val_idx)}, Test {len(test_idx)}")
     train_set = Subset(ds, train_idx)
     val_set = Subset(ds, val_idx)
     test_set = Subset(ds, test_idx)
@@ -76,19 +74,19 @@ def run():
     val_loader = DataLoader(val_set, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
-    # --- Modell / Optimizer / Scheduler
+    # model
     SCALAR_LAYERS = [NUM_FEATURES_SCALARS] * NUM_LAYERS
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     config_name = (
-        f"oAniso_Scalar_Cutoff_{CUTOFF_RADIUS}"
+        f"Scalar_Cutoff_{CUTOFF_RADIUS}"
         f"_LR_{START_LR}"
         f"_Batch_{BATCH_SIZE}"
         f"_Layers{NUM_LAYERS}"
         f"_Scalar{NUM_FEATURES_SCALARS}"
     )
-    ckpt_dir = Path("./checkpoints") / config_name
+    ckpt_dir = Path("DiMolPol/experiments/checkpoints") / config_name
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     best_val = float("inf")
     best_path = ckpt_dir / "best_model.pt"  # nur Gewichte
@@ -96,7 +94,7 @@ def run():
     # << NEU
 
 
-    writer = SummaryWriter(log_dir=f"./logs/{config_name}")
+    writer = SummaryWriter(log_dir=f"DiMolPol/experiments/logs/{config_name}")
 
     model = ScalarModel(
         SCALAR_LAYERS, 1, Z2EMBED_QM7X

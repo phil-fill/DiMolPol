@@ -1,4 +1,4 @@
-# just a few train functions
+# train helpers
 
 import torch
 from tqdm import tqdm
@@ -28,7 +28,7 @@ def train_epoch_matrix(model, dataloader, optimizer, device, writer=None, epoch=
         m_aniso  = anisotropic_mae(pred, target)
 
         # kombinierter Loss
-        loss = m_aniso
+        loss = m_tensor
 
         loss.backward()
         if clip_grad is not None:

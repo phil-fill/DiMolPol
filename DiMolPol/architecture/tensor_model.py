@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from DiMolPol.DiMolPol.architecture.layers import ScalarChannel, VectorChannel, TensorChannel
+from DiMolPol.architecture.layers import ScalarChannel, VectorChannel, TensorChannel
 from torch_geometric.data import Data, Batch
 from torch_geometric.nn import global_add_pool
 from typing import List, Optional, Tuple
@@ -53,7 +53,6 @@ def to_global_frame(t_local: torch.Tensor, R: torch.Tensor) -> torch.Tensor:
 class TensorMessage_Tensors(nn.Module):
     """
     Multi-channel scalar/vector/tensor message passing with gated tensor readout.
-    Minimal comments: embeds atom types, stacks per-layer channels, aggregates norms, gates tensors, rotates and pools.
     """
     def __init__(
         self,
