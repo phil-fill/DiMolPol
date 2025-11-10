@@ -29,7 +29,7 @@ META_PATH = "data/meta.pickle"
 
 
 # Splits:
-SPLIT_JSON    = "data/splits_mol.json"      # Fallback (wird zu Indizes rekonstruiert)
+SPLIT_JSON    = "data/splits_mol.json"
 
 EPOCHS               = 1000
 BATCH_SIZE           = 32
@@ -85,7 +85,7 @@ def run():
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     config_name = (
-        f"oAniso_Tensor_Cutoff_{CUTOFF_RADIUS}"
+        f"Tensor_Cutoff_{CUTOFF_RADIUS}"
         f"_LR_{START_LR}"
         f"_Batch_{BATCH_SIZE}"
         f"_Layers{NUM_LAYERS}"
